@@ -1,0 +1,6 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/vtgcon/Рабочий стол/newext'
+make: Leaving directory '/home/vtgcon/Рабочий стол/newext'
+ 
+make: *** No targets specified and no makefile found.  Stop.
+ 

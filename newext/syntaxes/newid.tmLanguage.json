@@ -1,0 +1,64 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "newname",
+	"patterns": [
+		{
+			"include": "#main"
+		},
+		{
+			"include": "#var"
+		},
+		{
+			"include": "#ident"
+		},
+		{
+			"include": "#logic"
+		},
+		{
+			"include": "#eq"
+		}
+	],
+	"repository": {
+		"ident": {
+		  "patterns": [
+			{
+			  "name": "constant.character.escape.vyacheslav",
+			  "match": "[a-z][a-zA-Z0-9]*"
+			}
+		  ]
+		},
+		"var": {
+		  "patterns": [
+			{
+			  "name": "variable.other",
+			  "match": "([A-Z][a-zA-Z0-9]*|[1-9][0-9]*)"
+			}
+		  ]
+		},
+		"main": {
+		  "patterns": [
+			{
+			  "name": "string.quoted.double.n",
+			  "match": "main "
+			}
+		  ]
+		},
+		"logic": {
+		  "patterns": [
+			{
+			  "name": "constant.numeric",
+			  "match": "(&&|\\|\\||->)"
+			}
+		  ]
+		},
+		"eq":{
+			"patterns": [
+				{
+					"name": "keyword.control.n",
+					"match": "\\="
+				}
+			]
+		}
+	},
+	"scopeName": ".nexscope"
+}

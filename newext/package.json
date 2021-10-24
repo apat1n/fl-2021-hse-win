@@ -1,0 +1,25 @@
+{
+    "name": "newext",
+    "displayName": "newext",
+    "description": "newdisc",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.61.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "newid",
+            "aliases": ["newname", "newid"],
+            "extensions": ["newext"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "newid",
+            "scopeName": ".nexscope",
+            "path": "./syntaxes/newid.tmLanguage.json"
+        }]
+    }
+}
