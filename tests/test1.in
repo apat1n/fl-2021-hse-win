@@ -1,0 +1,2 @@
+and X Y = X && Y;
+main = and true false;

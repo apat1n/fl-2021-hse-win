@@ -1,6 +1,8 @@
 %{
 #include <cstdlib>
 #include <iostream>
+#include <map>
+#include <sstream>
 #include <stack>
 #include <string>
 #include <vector>
@@ -12,18 +14,32 @@ int yyerror(const char *p) { cerr << "Error!" << endl; }
 
 unordered_set<string> keywords = {"true", "false", "if", "else", "or", "and"};
 
-struct vertex{
+struct vertex {
+  int num;
   string type_;
   vector <vertex*> list;
 };
 
+int cc = 0;
+map<int, string> result_str;
 void dfs(vertex *a) {
-  for (int i = 0; i < a->list.size(); i++) {
-      cout << a->list[i]->type_ << ' ';
+  stringstream ss;
+  ss << "Node " << a->num << ": " << a->type_ << "\n";
+  if (a->list.size() > 0) {
+    ss << "Edges to [";
+    bool first = true;
+    for (vertex* vert: a->list) {
+      if (first) first = false;
+      else ss << ", ";
+      ss << vert->num;
+    }
+    ss << "]\n";
+  } else {
+    ss << "No edges\n";
   }
-  if (a->list.size() > 0) cout << '\n';
+  result_str[a->num] = ss.str();
   for (int i = 0; i < a->list.size(); i++) {
-      dfs(a->list[i]);
+    dfs(a->list[i]);
   }
 }
 
@@ -34,94 +50,147 @@ stack<vertex*>buf;
 %union {
   char *val;
 };
-%token <val> UNIFY AND OR IDENT KEY VAR SC COMMENT LP RP EQ MAIN
+%token <val> LP RP SC EQ
+%token <val> UNIFY AND OR
+%token <val> IDENT VAR COMMENT MAIN
 %%
 
 start: EXP EQ GOAL SC start {
   vector<vertex*>tmp(5);
-  graph.push_back(new vertex{"EQ", {}});
+  graph.push_back(new vertex{cc++, "EQ", {}});
   tmp[1] = graph[graph.size() - 1];
-  graph.push_back(new vertex{"SC", {}});
+  graph.push_back(new vertex{cc++, "SC", {}});
   tmp[3] = graph[graph.size() - 1];
-  tmp[4] = buf.top();
-  buf.pop();
-  tmp[2] = buf.top();
-  buf.pop();
-  tmp[0] = buf.top();
-  buf.pop();
-  graph.push_back(new vertex{"START", tmp});
+  tmp[4] = buf.top(); buf.pop();
+  tmp[2] = buf.top(); buf.pop();
+  tmp[0] = buf.top(); buf.pop();
+  graph.push_back(new vertex{cc++, "START", tmp});
   buf.push(graph[graph.size() - 1]);
 }
 | COMMENT start {
-  graph.push_back(new vertex{"COMMENT", {}});
-  graph.push_back(new vertex{"START", {graph[graph.size() - 1]}});
+  graph.push_back(new vertex{cc++, "COMMENT", {}});
+  graph.push_back(new vertex{cc++, "START", {graph[graph.size() - 1]}});
   buf.push(graph[graph.size() - 1]);
 }
 | MAIN EQ EXP SC {
-  vector<vertex*>tmp(4);
-  graph.push_back(new vertex{"EQ", {}});
-  tmp[1] = graph[graph.size() - 1];
-  graph.push_back(new vertex{"SC", {}});
-  tmp[3] = graph[graph.size() - 1];
-  tmp[2] = buf.top();
-  buf.pop();
-  graph.push_back(new vertex{"MAIN", {}});
+  vector<vertex*>tmp(3);
+  graph.push_back(new vertex{cc++, "EQ", {}});
   tmp[0] = graph[graph.size() - 1];
-  graph.push_back(new vertex{"START", tmp});
+  graph.push_back(new vertex{cc++, "SC", {}});
+  tmp[2] = graph[graph.size() - 1];
+  tmp[1] = buf.top(); buf.pop();
+  graph.push_back(new vertex{cc++, "MAIN", tmp});
   buf.push(graph[graph.size() - 1]);
 }
 | {
-  graph.push_back(new vertex{"START", {}});
+  graph.push_back(new vertex{cc++, "START", {}});
   buf.push(graph[graph.size() - 1]);
 }
 
 GOAL: EXP UNIFY EXP {
-  graph.push_back(new vertex{"UNIFY", {}});
+  graph.push_back(new vertex{cc++, "UNIFY", {}});
   vector<vertex*>tmp(3);
   tmp[1] = graph[graph.size() - 1];
-  tmp[2] = buf.top();
-  buf.pop();
-  tmp[0] = buf.top();
-  buf.pop();
-  graph.push_back(new vertex{"GOAL", tmp});
+  tmp[2] = buf.top(); buf.pop();
+  tmp[0] = buf.top(); buf.pop();
+  graph.push_back(new vertex{cc++, "GOAL", tmp});
   buf.push(graph[graph.size() - 1]);
 }
 | EXP OR EXP {
-  graph.push_back(new vertex{"OR", {}});
+  graph.push_back(new vertex{cc++, "OR", {}});
   vector<vertex*>tmp(3);
   tmp[1] = graph[graph.size() - 1];
-  tmp[2] = buf.top();
-  buf.pop();
-  tmp[0] = buf.top();
-  buf.pop();
-  graph.push_back(new vertex{"GOAL", tmp});
+  tmp[2] = buf.top(); buf.pop();
+  tmp[0] = buf.top(); buf.pop();
+  graph.push_back(new vertex{cc++, "GOAL", tmp});
   buf.push(graph[graph.size() - 1]);
 }
 | EXP AND EXP {
-  graph.push_back(new vertex{"AND", {}});
+  graph.push_back(new vertex{cc++, "AND", {}});
   vector<vertex*>tmp(3);
   tmp[1] = graph[graph.size() - 1];
-  tmp[2] = buf.top();
-  buf.pop();
-  tmp[0] = buf.top();
-  buf.pop();
-  graph.push_back(new vertex{"GOAL", tmp});
+  tmp[2] = buf.top(); buf.pop();
+  tmp[0] = buf.top(); buf.pop();
+  graph.push_back(new vertex{cc++, "GOAL", tmp});
   buf.push(graph[graph.size() - 1]);
 }
 
 EXP: IDENT VARS {
-  graph.push_back(new vertex{$1, {}});
-  graph.push_back(new vertex{"EXP", {graph[graph.size() - 1], buf.top()}});
+  graph.push_back(new vertex{cc++, $1, {}});
+  graph.push_back(new vertex{cc++, "EXP", {graph[graph.size() - 1], buf.top()}});
   buf.pop();
   buf.push(graph[graph.size() - 1]);
 }
 | IDENT {
-  graph.push_back(new vertex{$1, {}});
-  graph.push_back(new vertex{"EXP", {graph[graph.size() - 1]}});
+  graph.push_back(new vertex{cc++, $1, {}});
+  graph.push_back(new vertex{cc++, "EXP", {graph[graph.size() - 1]}});
   buf.push(graph[graph.size() - 1]);
 }
 | VAR {
-  graph.push_back(new vertex{$1, {}});
-  graph.push_back(new vertex{"EXP", {graph[graph.size() - 1]}});
+  graph.push_back(new vertex{cc++, $1, {}});
+  graph.push_back(new vertex{cc++, "EXP", {graph[graph.size() - 1]}});
   buf.push(graph[graph.size() - 1]);
+}
+
+VARS: VAR VARS {
+  graph.push_back(new vertex{cc++, $1, {}});
+  graph.push_back(new vertex{cc++, "VARS", {graph[graph.size() - 1], buf.top()}});
+  buf.pop();
+  buf.push(graph[graph.size() - 1]);
+}
+| IDENT VARS {
+  if (keywords.find($1) == keywords.end()) {
+    yyerror("expected var or keyword, but got identifier!");
+  }
+  graph.push_back(new vertex{cc++, $1, {}});
+  graph.push_back(new vertex{cc++, "VARS", {graph[graph.size() - 1], buf.top()}});
+  buf.pop();
+  buf.push(graph[graph.size() - 1]);
+}
+| LP EXP RP VARS  {
+  vector<vertex*>tmp(4);
+  graph.push_back(new vertex{cc++, "LP", {}});
+  tmp[0] = graph[graph.size() - 1];
+  graph.push_back(new vertex{cc++, "RP", {}});
+  tmp[2] = graph[graph.size() - 1];
+  tmp[3] = buf.top(); buf.pop();
+  tmp[1] = buf.top(); buf.pop();
+  graph.push_back(new vertex{cc++, "VARS", tmp});
+  buf.push(graph[graph.size() - 1]);
+}
+| LP EXP RP {
+  vector<vertex*>tmp(3);
+  graph.push_back(new vertex{cc++, "LP", {}});
+  tmp[0] = graph[graph.size() - 1];
+  graph.push_back(new vertex{cc++, "RP", {}});
+  tmp[2] = graph[graph.size() - 1];
+  tmp[1] = buf.top(); buf.pop();
+  graph.push_back(new vertex{cc++, "VARS", tmp});
+  buf.push(graph[graph.size() - 1]);
+}
+| {
+  graph.push_back(new vertex{cc++, "VARS", {}});
+  buf.push(graph[graph.size() - 1]);
+}
+
+%%
+
+int main(int argc, char **argv) {
+  assert(argc == 2);
+  freopen(argv[1], "r", stdin);
+  try {
+    yyparse();
+  } catch (exception &e) {
+    cerr << "Exception: " << e.what() << "\n";
+    fclose(stdin);
+    return 1;
+  }
+  fclose(stdin);
+
+  cout << "TREE\n";
+  dfs(buf.top());
+  for (auto &[num, str]: result_str) {
+    cout << str;
+  }
+  return 0;
 }
