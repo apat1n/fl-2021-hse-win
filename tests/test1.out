@@ -39,15 +39,17 @@ Node 18: and
 No edges
 Node 19: EXP
 Edges to [18, 17]
-Node 20: EQ
+Node 20: GOAL
+Edges to [19, 19]
+Node 21: EQ
 No edges
-Node 21: SC
+Node 22: SC
 No edges
-Node 22: MAIN
-Edges to [20, 19, 21]
-Node 23: EQ
+Node 23: MAIN
+Edges to [21, 20, 22]
+Node 24: EQ
 No edges
-Node 24: SC
+Node 25: SC
 No edges
-Node 25: START
-Edges to [6, 23, 12, 24, 22]
+Node 26: START
+Edges to [6, 24, 12, 25, 23]

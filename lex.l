@@ -20,6 +20,7 @@ VAR      ([A-Z][a-zA-Z0-9]*|[1-9][0-9]*)
 ";"      { return SC; }
 "="      { return EQ; }
 "main"   { return MAIN; }
+{COMMENT} { return COMMENT; }
 {IDENT}  {
     char *buf = new char[strlen(yytext) + 1];
     strcpy(buf, yytext);

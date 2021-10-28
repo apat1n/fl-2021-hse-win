@@ -6,25 +6,80 @@
 #include <stack>
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <unordered_set>
 using namespace std;
 
 int yylex();
-int yyerror(const char *p) { cerr << "Error!" << endl; }
+int yyerror(const char *p) { cerr << "Error! " << p << endl; }
 
 unordered_set<string> keywords = {"true", "false", "if", "else", "or", "and"};
 
 struct vertex {
   int num;
-  string type_;
+  string type;
   vector <vertex*> list;
+  string val = type;
+
+  vertex(int num_, string type_, vector<vertex*> list_) : 
+    num(num_), type(type_), list(list_) {
+  }
+
+  vertex(int num_, string type_, vector<vertex*> list_, string val_) : 
+    num(num_), type(type_), list(list_), val(val_) {
+  }
 };
+unordered_map<string, unordered_set<string>> ident_vars;
+
+void parse_idents(vertex *a, vertex* ident = nullptr) {
+  // cout << a->num << " " << a->type << " " << a->list.size() << " " << ident << "\n";
+  if (a->type == "VARS" && ident != nullptr && a->list.size() > 0) {
+    if (ident_vars.find(ident->val) == ident_vars.end()) {
+      ident_vars[ident->val] = {a->list[0]->val};
+    } else {
+      ident_vars[ident->val].insert(a->list[0]->val);
+    }
+    parse_idents(a->list[1], ident);
+  } else if (a->type == "START" && a->list.size() > 0 && a->list[0]->type == "EXP") {
+    vertex* exp = a->list[0];
+    parse_idents(exp->list[1], exp->list[0]);
+  } else {
+    for (auto &child: a->list) {
+      parse_idents(child);
+    }
+  }
+}
+
+void check_goals(vertex *a, vertex* ident = nullptr) {
+  // cout << a->num << " " << a->type << " " << a->list.size() << " " << ident << "\n";
+  if (a->type == "START" && a->list.size() > 0 && a->list[0]->type == "EXP") {
+    vertex* exp = a->list[0]->list[0];
+    check_goals(a->list[2], a->list[0]->list[0]);
+    check_goals(a->list[4]);
+  } else {
+    for (auto &child: a->list) {
+      if (child->type == "IDENT" && ident_vars.find(child->val) == ident_vars.end() &&
+        keywords.find(child->val) == keywords.end()) {
+        stringstream what;
+        what << "Unrecognised identifier " << child->val;
+        yyerror(what.str().c_str());
+      }
+      if (child->type == "VAR" && ident != nullptr && 
+        ident_vars[ident->val].find(child->val) == ident_vars[ident->val].end()) {
+          stringstream what;
+          what << "Unrecognised variable " << child->val;
+          yyerror(what.str().c_str());
+      }
+      check_goals(child, ident);
+    }
+  }
+}
 
 int cc = 0;
 map<int, string> result_str;
-void dfs(vertex *a) {
+void make_ast(vertex *a) {
   stringstream ss;
-  ss << "Node " << a->num << ": " << a->type_ << "\n";
+  ss << "Node " << a->num << ": " << a->val << "\n";
   if (a->list.size() > 0) {
     ss << "Edges to [";
     bool first = true;
@@ -39,7 +94,7 @@ void dfs(vertex *a) {
   }
   result_str[a->num] = ss.str();
   for (int i = 0; i < a->list.size(); i++) {
-    dfs(a->list[i]);
+    make_ast(a->list[i]);
   }
 }
 
@@ -69,10 +124,11 @@ start: EXP EQ GOAL SC start {
 }
 | COMMENT start {
   graph.push_back(new vertex{cc++, "COMMENT", {}});
-  graph.push_back(new vertex{cc++, "START", {graph[graph.size() - 1]}});
+  graph.push_back(new vertex{cc++, "START", {graph[graph.size() - 1], buf.top()}});
+  buf.pop();
   buf.push(graph[graph.size() - 1]);
 }
-| MAIN EQ EXP SC {
+| MAIN EQ GOAL SC {
   vector<vertex*>tmp(3);
   graph.push_back(new vertex{cc++, "EQ", {}});
   tmp[0] = graph[graph.size() - 1];
@@ -114,26 +170,31 @@ GOAL: EXP UNIFY EXP {
   graph.push_back(new vertex{cc++, "GOAL", tmp});
   buf.push(graph[graph.size() - 1]);
 }
+| EXP {
+  graph.push_back(new vertex{cc++, "GOAL", {graph[graph.size() - 1], buf.top()}});
+  buf.pop();
+  buf.push(graph[graph.size() - 1]);
+}
 
 EXP: IDENT VARS {
-  graph.push_back(new vertex{cc++, $1, {}});
+  graph.push_back(new vertex{cc++, "IDENT", {}, $1});
   graph.push_back(new vertex{cc++, "EXP", {graph[graph.size() - 1], buf.top()}});
   buf.pop();
   buf.push(graph[graph.size() - 1]);
 }
 | IDENT {
-  graph.push_back(new vertex{cc++, $1, {}});
+  graph.push_back(new vertex{cc++, "IDENT", {}, $1});
   graph.push_back(new vertex{cc++, "EXP", {graph[graph.size() - 1]}});
   buf.push(graph[graph.size() - 1]);
 }
 | VAR {
-  graph.push_back(new vertex{cc++, $1, {}});
+  graph.push_back(new vertex{cc++, "VAR", {}, $1});
   graph.push_back(new vertex{cc++, "EXP", {graph[graph.size() - 1]}});
   buf.push(graph[graph.size() - 1]);
 }
 
 VARS: VAR VARS {
-  graph.push_back(new vertex{cc++, $1, {}});
+  graph.push_back(new vertex{cc++, "VAR", {}, $1});
   graph.push_back(new vertex{cc++, "VARS", {graph[graph.size() - 1], buf.top()}});
   buf.pop();
   buf.push(graph[graph.size() - 1]);
@@ -142,7 +203,7 @@ VARS: VAR VARS {
   if (keywords.find($1) == keywords.end()) {
     yyerror("expected var or keyword, but got identifier!");
   }
-  graph.push_back(new vertex{cc++, $1, {}});
+  graph.push_back(new vertex{cc++, "IDENT", {}, $1});
   graph.push_back(new vertex{cc++, "VARS", {graph[graph.size() - 1], buf.top()}});
   buf.pop();
   buf.push(graph[graph.size() - 1]);
@@ -187,8 +248,11 @@ int main(int argc, char **argv) {
   }
   fclose(stdin);
 
+  parse_idents(buf.top());
+  check_goals(buf.top());
+
   cout << "TREE\n";
-  dfs(buf.top());
+  make_ast(buf.top());
   for (auto &[num, str]: result_str) {
     cout << str;
   }

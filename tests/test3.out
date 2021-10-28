@@ -1,1 +1,61 @@
-input in flex scanner failed
+TREE
+Node 0: VARS
+No edges
+Node 1: Y
+No edges
+Node 2: VARS
+Edges to [1, 0]
+Node 3: X
+No edges
+Node 4: VARS
+Edges to [3, 2]
+Node 5: eval
+No edges
+Node 6: EXP
+Edges to [5, 4]
+Node 7: X
+No edges
+Node 8: EXP
+Edges to [7]
+Node 9: Y
+No edges
+Node 10: EXP
+Edges to [9]
+Node 11: OR
+No edges
+Node 12: GOAL
+Edges to [8, 11, 10]
+Node 13: VARS
+No edges
+Node 14: false
+No edges
+Node 15: VARS
+Edges to [14, 13]
+Node 16: true
+No edges
+Node 17: VARS
+Edges to [16, 15]
+Node 18: eval
+No edges
+Node 19: EXP
+Edges to [18, 17]
+Node 20: true
+No edges
+Node 21: EXP
+Edges to [20]
+Node 22: AND
+No edges
+Node 23: GOAL
+Edges to [19, 22, 21]
+Node 24: EQ
+No edges
+Node 25: SC
+No edges
+Node 26: MAIN
+Edges to [24, 23, 25]
+Node 27: EQ
+No edges
+Node 28: SC
+No edges
+Node 29: START
+Edges to [6, 27, 12, 28, 26]

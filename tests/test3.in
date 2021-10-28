@@ -1,0 +1,2 @@
+eval X Y = X || Y;
+main = eval true false && true;
